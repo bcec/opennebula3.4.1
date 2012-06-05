@@ -88,6 +88,58 @@ void VirtualMachinePoolInfo::request_execute(
     dump(att, filter_flag, start_id, end_id, state_filter.str(), "");
 }
 
+//added by shenxy 20120605
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+
+void VirtualMachinePoolStatistic::request_execute(
+        xmlrpc_c::paramList const& paramList,
+        RequestAttributes& att)
+{
+    int filter_flag = xmlrpc_c::value_int(paramList.getInt(1));
+    //int start_id    = xmlrpc_c::value_int(paramList.getInt(2));
+    //int end_id      = xmlrpc_c::value_int(paramList.getInt(3));
+    //int state       = xmlrpc_c::value_int(paramList.getInt(4));
+
+    bool extended       = xmlrpc_c::value_boolean(paramList.getBoolean(2));
+    int    state        = xmlrpc_c::value_int (paramList.getInt(3));
+    string lcm_state    = xmlrpc_c::value_string (paramList.getString(4));
+    bool  returnxml     = xmlrpc_c::value_boolean(paramList.getBoolean(5));
+
+
+    ostringstream state_filter;
+
+    if (( state < VirtualMachinePoolInfo::ALL_VM ) ||
+        ( state > VirtualMachine::FAILED ))
+    {
+        failure_response(XML_RPC_API,
+                         request_error("Incorrect filter_flag, state",""),
+                         att);
+
+        return;
+    }
+
+    switch(state)
+    {
+        case VirtualMachinePoolInfo::ALL_VM:
+            break;
+
+        case VirtualMachinePoolInfo::NOT_DONE:
+            state_filter << "state <> " << VirtualMachine::DONE;
+            break;
+
+        default:
+            state_filter << "state = " << state;
+            break;
+    }
+
+    //dump(att, filter_flag, -1, -1, state_filter.str(), "");
+
+    get_statistic(att,filter_flag,-1,-1,extended,state,lcm_state,returnxml,state_filter.str(),"");
+    
+}
+
+
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
 
@@ -325,4 +377,237 @@ void RequestManagerPoolInfoFilter::dump(
 
     return;
 }
+
+//shenxy 20120605
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+
+void RequestManagerPoolInfoFilter::get_statistic(
+        RequestAttributes& att,
+        int                filter_flag,
+        int                start_id,
+        int                end_id,
+        bool             extended,
+        int                state,
+        string           lcm_state,
+        bool             returnxml,
+        const string&      and_clause,
+        const string&      or_clause)
+{
+    set<int>::iterator it;
+
+    ostringstream oss;
+    bool          empty = true;
+    ostringstream where_string;
+
+    ostringstream uid_filter;
+    ostringstream id_filter;
+
+    string uid_str;
+    string acl_str;
+    string id_str;
+
+    vector<int>  oids2;  //shenxy 20120605
+
+    int rc;
+
+    if ( filter_flag < MINE )
+    {
+        failure_response(XML_RPC_API,
+                request_error("Incorrect filter_flag",""),
+                att);
+        return;
+    }
+
+    Nebula&     nd   = Nebula::instance();
+    AclManager* aclm = nd.get_aclm();
+    bool        all;
+    vector<int> oids;
+    vector<int> gids;
+
+    // -------------------------------------------------------------------------
+    //                             User ID filter              
+    // ------------------------------------------------------------------------- 
+
+    if ( att.uid == 0 || att.gid == 0 )
+    {
+        all = true;
+    }
+    else
+    {
+        ostringstream         acl_filter;
+        vector<int>::iterator it;   
+
+        aclm->reverse_search(att.uid, 
+                             att.gid, 
+                             auth_object,
+                             AuthRequest::USE, 
+                             all, 
+                             oids, 
+                             gids);
+
+        for ( it = oids.begin(); it < oids.end(); it++ )
+        {
+            acl_filter << " OR oid = " << *it;
+        }
+
+        for ( it = gids.begin(); it < gids.end(); it++ )
+        {
+            acl_filter << " OR gid = " << *it;
+        }
+
+        acl_str = acl_filter.str();
+    }
+
+    switch ( filter_flag )
+    {
+        case MINE:
+            uid_filter << "uid = " << att.uid;
+            break;
+
+        case MINE_GROUP:
+            uid_filter << " uid = " << att.uid 
+                       << " OR ( gid = " << att.gid << " AND group_u = 1 )";
+            break;
+
+        case ALL:
+            if (!all)
+            {
+                uid_filter << " uid = " << att.uid 
+                           << " OR ( gid = " << att.gid << " AND group_u = 1 )"
+                           << " OR other_u = 1"
+                           << acl_str;
+            }
+            break;
+
+        default:
+            uid_filter << "uid = " << filter_flag;
+
+            if ( filter_flag != att.uid && !all )
+            {
+                uid_filter << " AND ("
+                           << " ( gid = " << att.gid << " AND group_u = 1)"
+                           << " OR other_u = 1"
+                           << acl_str
+                           << ")";
+            }
+            break;
+    }
+
+    uid_str = uid_filter.str();
+
+    // ------------------------------------------ 
+    //              Resource ID filter 
+    // ------------------------------------------ 
+
+    if ( start_id != -1 )
+    {
+        id_filter << "oid >= " << start_id;
+
+        if ( end_id != -1 )
+        {
+            id_filter << " AND oid <= " << end_id;
+        }
+    }
+
+     //shenxy 20120605
+     if (!lcm_state.empty())
+    {
+          id_filter << "lcm_state in(" << lcm_state << ")";
+     }
+
+    id_str = id_filter.str();
+
+    // ------------------------------------------ 
+    //           Compound WHERE clause 
+    // ------------------------------------------ 
+
+    // WHERE ( id_str ) AND ( uid_str ) AND ( and_clause ) OR ( or_clause )
+
+    if (!id_str.empty())
+    {
+        where_string << "(" << id_str << ")" ;
+        empty = false;
+    }
+
+    if (!uid_str.empty())
+    {
+        if (!empty)
+        {
+            where_string << " AND ";
+        }
+
+        where_string << "(" << uid_str << ")";
+        empty = false;
+    }
+
+    if (!and_clause.empty())
+    {
+        if (!empty)
+        {
+            where_string << " AND ";
+        }
+
+        where_string << "(" << and_clause << ")";
+        empty = false;
+    }
+
+    if (!or_clause.empty())
+    {
+        if (!empty)
+        {
+            where_string << " OR ";
+        }
+
+        where_string << "(" << or_clause << ")";
+    }
+
+    // ------------------------------------------ 
+    //           Get the pool
+    // ------------------------------------------ 
+
+    //shenxy 20120605
+    if (returnxml) {
+            rc = pool->dump(oss,where_string.str());
+            
+             if ( rc != 0 )
+            {
+                   failure_response(INTERNAL,request_error("Internal Error",""), att);
+                   return;
+            }
+    }
+
+    //----shenxy 20120605
+    ostringstream   os;
+    string               where;
+    
+    if(state != -1)
+    {
+           os << " state = " << state << " or";   
+     }
+
+     if (!lcm_state.empty() )
+     {
+            os << " lcm_state in ("  << lcm_state  << ")"
+                <<  " ORDER BY last_poll ASC";
+     }
+
+     where = os.str();
+
+     char *vmpool_table = "vm_pool";
+     rc = pool->search(oids2, vmpool_table , where);
+    //-------
+    
+
+    if ( rc != 0 )
+    {
+        failure_response(INTERNAL,request_error("Internal Error",""), att);
+        return;
+    }
+
+    success_response(oss.str(),oids2, att);
+
+    return;
+}
+
 

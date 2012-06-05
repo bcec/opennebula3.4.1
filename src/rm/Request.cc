@@ -154,6 +154,25 @@ void Request::success_response(const string& val, RequestAttributes& att)
     *(att.retval) = arrayresult;
 }
 
+//added by shenxy 20120605
+/* -------------------------------------------------------------------------- */
+
+void Request::success_response(
+                                   const string& val, 
+                                   vector<int>& oids,
+                                   RequestAttributes& att)
+{    
+    vector<xmlrpc_c::value> arrayData;
+
+    arrayData.push_back(xmlrpc_c::value_boolean(true));
+    arrayData.push_back(xmlrpc_c::value_string(val));
+    arrayData.push_back(xmlrpc_c::value_int(oids.size()));
+
+    xmlrpc_c::value_array arrayresult(arrayData);
+
+    *(att.retval) = arrayresult;
+}
+
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 

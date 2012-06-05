@@ -156,6 +156,19 @@ protected:
      */
     void success_response(const string& val, RequestAttributes& att);
 
+   //added by shenxy 20120605
+    /**
+     *  Builds an XML-RPC response updating retval. After calling this function
+     *  the xml-rpc excute method should return
+     *    @param val string to be returned to the client
+     *    @param oids stands for the number of VM on a specific status
+     *    @param att the specific request attributes
+     */
+    void success_response(
+                                   const string& val, 
+                                   vector<int>& oids,
+                                   RequestAttributes& att);
+
     /**
      *  Builds an XML-RPC response updating retval. After calling this function
      *  the xml-rpc excute method should return

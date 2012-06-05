@@ -300,6 +300,9 @@ void RequestManager::register_xml_methods()
     xmlrpc_c::methodPtr imagepool_info(new ImagePoolInfo());
     xmlrpc_c::methodPtr clusterpool_info(new ClusterPoolInfo());
 
+	//added by shenxy 20120605
+	xmlrpc_c::methodPtr vm_pool_statistic(new VirtualMachinePoolStatistic());
+
     // Host Methods
     xmlrpc_c::methodPtr host_enable(new HostEnable());
 
@@ -358,6 +361,8 @@ void RequestManager::register_xml_methods()
     RequestManagerRegistry.addMethod("one.template.chmod", template_chmod);
 
     RequestManagerRegistry.addMethod("one.templatepool.info",template_pool_info);
+    //added by shenxy
+    RequestManagerRegistry.addMethod("one.vmpool.statistic",vm_pool_statistic);
 
     /* Host related methods*/
     RequestManagerRegistry.addMethod("one.host.enable", host_enable);

@@ -62,6 +62,17 @@ protected:
               int                end_id,
               const string&      and_clause, 
               const string&      or_clause);
+
+	void get_statistic(RequestAttributes& att,
+        int                filter_flag,
+        int                start_id,
+        int                end_id,
+        bool               extended,
+        int                state,
+        string             lcm_state,
+        bool               returnxml,
+        const string&      and_clause,
+        const string&      or_clause);
 };
 
 /* ------------------------------------------------------------------------- */
@@ -94,6 +105,40 @@ public:
     void request_execute(
             xmlrpc_c::paramList const& paramList, RequestAttributes& att);
 };
+
+//added by shenxy
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+
+class VirtualMachinePoolStatistic : public RequestManagerPoolInfoFilter
+{
+	public:
+		/* -------------------------------------------------------------------- */
+	
+		static const int ALL_VM;   /**< VMs in any state  (-2) */
+		static const int NOT_DONE; /**< VMs in any state expect DONE (-1)*/
+	
+		/* -------------------------------------------------------------------- */
+	
+		VirtualMachinePoolStatistic():
+			RequestManagerPoolInfoFilter("VirtualMachinePoolStatistic",
+										 "Returns the number of virtual machine on a specific status",
+										 "A:siiii")
+		{	 
+			Nebula& nd	= Nebula::instance();
+			pool		= nd.get_vmpool();
+			auth_object = PoolObjectSQL::VM;
+		};
+	
+		~VirtualMachinePoolStatistic(){};
+	
+		/* -------------------------------------------------------------------- */
+	
+		void request_execute(
+				xmlrpc_c::paramList const& paramList, RequestAttributes& att);
+};
+
+
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
