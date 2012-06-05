@@ -19,8 +19,8 @@
 
 # Username and password of the VMware hypervisor
 :username: "oneadmin"
-:password:
+:password: "oneadmin"
 
 # VMotion configuration attributes
-:datacenter: "ha-datacenter"
-:vcenter:
+:datacenter: "CMCC"
+:vcenter: "192.168.34.195"
