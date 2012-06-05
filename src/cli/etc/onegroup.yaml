@@ -1,0 +1,14 @@
+--- 
+:ID: 
+  :desc: ONE identifier for the Group
+  :size: 4
+
+:NAME: 
+  :desc: Name of the Group
+  :size: 15
+  :left: true
+
+:default:
+- :ID
+- :NAME
+

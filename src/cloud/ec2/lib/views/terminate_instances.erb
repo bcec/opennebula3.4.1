@@ -1,0 +1,14 @@
+<TerminateInstancesResponse xmlns="http://ec2.amazonaws.com/doc/<%= erb_version %>/"> 
+  <instancesSet> 
+    <item> 
+      <instanceId>i-<%= vm.id %></instanceId> 
+      <shutdownState> 
+        <code>32</code> 
+        <name>shutting-down</name> 
+      </shutdownState> 
+      <previousState> 
+          <%= render_state(vm) %>
+      </previousState>
+    </item>
+  </instancesSet> 
+</TerminateInstancesResponse> 

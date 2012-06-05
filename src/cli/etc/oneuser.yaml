@@ -1,0 +1,30 @@
+--- 
+:ID: 
+  :desc: ONE identifier for the User
+  :size: 4
+
+:NAME: 
+  :desc: Name of the User
+  :size: 15
+  :left: true
+
+:GROUP: 
+  :desc: Group of the User
+  :size: 8
+  :left: true
+
+:AUTH: 
+  :desc: Auth driver of the User
+  :size: 8
+  :left: true
+
+:PASSWORD: 
+  :desc: Password of the User
+  :size: 50
+
+:default:
+- :ID
+- :GROUP
+- :NAME
+- :AUTH
+- :PASSWORD
