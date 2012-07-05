@@ -135,13 +135,22 @@ class VMwareDriver
         return "STATE=d" if rc == false
 
         state = ""
-
+	bcec_cpu = ""
+	bcec_mem = ""
         info.split('\n').each{ |line|
             mdata = line.match("^State: (.*)")
-
+	    bcec_cpus = line.match("^CPU\\(s\\): (.*)")
+	    bcec_mems = line.match("^Used memory: (.*) kB")
+	    if bcec_cpus
+		bcec_cpu = bcec_cpus[1].strip
+	    end
+            if bcec_mems 
+		bcec_mem = bcec_mems[1].strip
+	    end
+            
             if mdata
                 state = mdata[1].strip
-                break
+		break
             end
         }
 
@@ -156,7 +165,7 @@ class VMwareDriver
                 state_short = 'd'
         end
 
-        return "STATE=#{state_short}"
+        return "STATE=#{state_short} USEDCPU=#{bcec_cpu} USEDMEMORY=#{bcec_mem}"
     end
 
     # ------------------------------------------------------------------------ #
